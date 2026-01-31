@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CONECTA RAPS</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+
+    <!-- Google Maps -->
+
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        // Login Palette
+                        "brand": {
+                            "dark": "#003366",
+                            "medium": "#0056b3",
+                            "light": "#e6f0fa",
+                            "accent": "#00a8e8",
+                        },
+                        "card-light": "#ffffff",
+                        "card-dark": "#1e293b",
+                        "input-border-light": "#cbd5e1",
+                        "input-border-dark": "#334155",
+                        "text-main-light": "#1e293b",
+                        "text-main-dark": "#f1f5f9",
+                        "text-muted-light": "#64748b",
+                        "text-muted-dark": "#94a3b8",
+
+                        // Dashboard Palette
+                        "primary": "#330066",
+                        "primary-light": "#5a1e96",
+                        "primary-dark": "#240047",
+                        "background-light": "#f8f9fc",
+                        "background-dark": "#1a1c23",
+                        "accent": "#0ea5e9",
+                        "success": "#10b981",
+                        "warning": "#f59e0b",
+                        "danger": "#ef4444",
+                    },
+                    fontFamily: {
+                        "display": ["Poppins", "sans-serif"],
+                        "body": ["Poppins", "sans-serif"],
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 6px -1px rgba(0, 51, 102, 0.05), 0 2px 4px -1px rgba(0, 51, 102, 0.03)',
+                        'card': '0 10px 40px -3px rgba(0, 0, 0, 0.08)',
+                        'glow': '0 0 15px rgba(51, 0, 102, 0.3)',
+                    },
+                    backgroundImage: {
+                        'gradient-kpi-1': 'linear-gradient(135deg, #003366 0%, #002244 100%)',
+                        'gradient-kpi-2': 'linear-gradient(135deg, #ED1C24 0%, #c4171e 100%)',
+                        'gradient-kpi-3': 'linear-gradient(135deg, #00AEEF 0%, #008cc2 100%)',
+                        'gradient-kpi-4': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 24px;
+        }
+
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c7c7c7;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Map container */
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+  <script type="module" crossorigin src="/conectaRaps/assets/index-BwHZ1pi_.js"></script>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark antialiased transition-colors duration-300">
+    <div id="root"></div>
+</body>
+
+</html>
