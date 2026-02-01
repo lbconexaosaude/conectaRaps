@@ -11,6 +11,9 @@ const InsertionForm: React.FC = () => {
     const [patientNames, setPatientNames] = useState<string[]>([]);
     const [msg, setMsg] = useState<{ type: 'success' | 'info' | 'error', text: string } | null>(null);
 
+    // Alert State
+    const [visitCount, setVisitCount] = useState<number>(0);
+
     // Form State
     const [formData, setFormData] = useState({
         id: '',
@@ -18,6 +21,11 @@ const InsertionForm: React.FC = () => {
         nascimento: '',
         idade: '',
         sexo: '',
+        raca: '', // New
+        etnia: '', // New (Conditional)
+        outraRaca: '', // New (Conditional)
+        nacionalidade: 'BRASILEIRO', // New
+        outraNacionalidade: '', // New (Conditional)
         endereco: '',
         numero: '',
         bairro: '',
@@ -34,8 +42,6 @@ const InsertionForm: React.FC = () => {
         info: ''
     });
 
-
-
     // Load initial data (bairros)
     useEffect(() => {
         const loadData = async () => {
@@ -51,8 +57,6 @@ const InsertionForm: React.FC = () => {
     }, []);
 
     const addressInputRef = useRef<HTMLInputElement>(null);
-
-
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
@@ -153,13 +157,6 @@ const InsertionForm: React.FC = () => {
                             if (finalBairro) {
                                 updated.bairro = finalBairro;
                                 updated.zona = foundZone;
-                            } else {
-                                // If google returns a Bairro we don't have, maybe prompt user or leave empty?
-                                // User asked to "fix" it visually. Let's just set what we found, even if not in list (user can correct)
-                                // But select assumes value is in list.
-                                // If not in list, it won't show in select unless we add it or just let it be blank.
-                                // Let's try to set it, if it fails to valid option, select might show empty.
-                                // Better: Only set if matched.
                             }
                         }
                         return updated;
@@ -213,7 +210,14 @@ const InsertionForm: React.FC = () => {
     const checkPatient = async (nome: string, nascimento: string) => {
         if (!nome || !nascimento) return;
         try {
-            const data = await api.verificarPaciente(nome, nascimento);
+            const data = await api.verificarPaciente(nome);
+            // Handle count even if 'exists' is not the primary return or works differently
+            if (data.contagem) {
+                setVisitCount(data.contagem);
+            } else {
+                setVisitCount(0);
+            }
+
             if (data.result === 'exists') {
                 setFoundPatient(data.p);
                 setMsg({ type: 'info', text: '📋 Histórico encontrado! Deseja carregar os dados?' });
@@ -232,6 +236,8 @@ const InsertionForm: React.FC = () => {
             const updated = {
                 ...prev,
                 sexo: p.sexo || prev.sexo,
+                raca: p.raca || prev.raca, // Map if exists in history
+                nacionalidade: p.nacionalidade || prev.nacionalidade, // Map if exists
                 endereco: p.endereco || prev.endereco,
                 numero: p.num || prev.numero,
                 bairro: p.bairro || prev.bairro,
@@ -280,6 +286,20 @@ const InsertionForm: React.FC = () => {
         setLoading(true);
         try {
             const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+
+            // Format raca/nacionalidade fields logic
+            let finalRaca = formData.raca;
+            if (formData.raca === 'INDIGENA' && formData.etnia) {
+                finalRaca = `INDÍGENA - ${formData.etnia}`;
+            } else if (formData.raca === 'OUTROS' && formData.outraRaca) {
+                finalRaca = formData.outraRaca;
+            }
+
+            let finalNacionalidade = formData.nacionalidade;
+            if (formData.nacionalidade === 'OUTROS' && formData.outraNacionalidade) {
+                finalNacionalidade = formData.outraNacionalidade;
+            }
+
             const payload = {
                 id_paciente: formData.id,
                 nome: formData.nome,
@@ -300,13 +320,14 @@ const InsertionForm: React.FC = () => {
                 porque_fam: formData.pq_fam,
                 apoio_raps: formData.raps,
                 info_extra: formData.info,
-                responsavel: userInfo.nomeCompleto || 'Desconhecido'
+                responsavel: userInfo.nomeCompleto || 'Desconhecido',
+                raca: finalRaca,
+                nacionalidade: finalNacionalidade
             };
 
             const data = await api.salvarSamu(payload);
             if (data.result === 'success') {
                 setMsg({ type: 'success', text: '✅ Registro salvo com sucesso!' });
-                // Reset form or redirect? Original reloads.
                 setTimeout(() => window.location.reload(), 2000);
             } else {
                 setMsg({ type: 'error', text: 'Erro ao salvar.' });
@@ -324,7 +345,24 @@ const InsertionForm: React.FC = () => {
             <Sidebar />
             <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto p-4 md:p-8">
 
-                <div className="max-w-4xl mx-auto w-full bg-white dark:bg-card-dark rounded-xl shadow-card border-t-[6px] border-brand-dark p-6 md:p-8">
+                <div className="max-w-4xl mx-auto w-full bg-white dark:bg-card-dark rounded-xl shadow-card border-t-[6px] border-brand-dark p-6 md:p-8 relative">
+
+                    {/* [NEW] Recidivism Alert */}
+                    {visitCount > 3 && (
+                        <div className="mb-6 p-4 rounded-lg bg-red-100 border-l-4 border-red-600 flex items-start gap-3 animate-pulse">
+                            <span className="material-symbols-outlined text-red-600 text-3xl">warning</span>
+                            <div>
+                                <h3 className="text-red-800 font-bold text-lg uppercase">Atenção: Paciente Reincidente</h3>
+                                <p className="text-red-700 font-semibold">
+                                    Este paciente já possui <strong className="text-xl">{visitCount}</strong> atendimentos registrados.
+                                </p>
+                                <p className="text-red-700 text-sm mt-1">
+                                    Verificar imediatamente o vínculo com a Rede (RAPS) e considerar acionamento de suporte especializado.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     <h2 className="text-2xl font-bold text-brand-dark dark:text-white text-center mb-1">Ficha de Atendimento SAMU</h2>
                     <p className="text-center text-gray-500 text-sm mb-8">Preencha os dados com atenção</p>
 
@@ -384,14 +422,59 @@ const InsertionForm: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Sexo */}
-                        <div>
-                            <label className="block text-brand-dark dark:text-white font-semibold text-sm mb-1">Sexo</label>
-                            <select id="sexo" value={formData.sexo} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-medium">
-                                <option value="">Selecione</option>
-                                <option>Masculino</option>
-                                <option>Feminino</option>
-                            </select>
+                        {/* [NEW] Demographics Row: Sexo, Raça, Nacionalidade */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-brand-dark dark:text-white font-semibold text-sm mb-1">Sexo</label>
+                                <select id="sexo" value={formData.sexo} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-medium">
+                                    <option value="">Selecione</option>
+                                    <option>Masculino</option>
+                                    <option>Feminino</option>
+                                </select>
+                            </div>
+
+                            {/* Raca */}
+                            <div>
+                                <label className="block text-brand-dark dark:text-white font-semibold text-sm mb-1">Raça / Cor</label>
+                                <select id="raca" value={formData.raca} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-medium">
+                                    <option value="">Selecione</option>
+                                    <option value="BRANCA">Branca</option>
+                                    <option value="PRETA">Preta</option>
+                                    <option value="PARDA">Parda</option>
+                                    <option value="AMARELA">Amarela</option>
+                                    <option value="INDIGENA">Indígena</option>
+                                    <option value="OUTROS">Outros</option>
+                                </select>
+                                {formData.raca === 'INDIGENA' && (
+                                    <select id="etnia" value={formData.etnia} onChange={handleChange} className="w-full p-2.5 mt-2 border border-brand-light bg-blue-50 rounded-lg focus:ring-2 focus:ring-brand-medium text-sm">
+                                        <option value="">Selecione a Etnia...</option>
+                                        <option value="MACUXI">Macuxi</option>
+                                        <option value="WAPICHANA">Wapichana</option>
+                                        <option value="TAUREPANG">Taurepang</option>
+                                        <option value="IANOMAMI">Yanomami</option>
+                                        <option value="YE'KUANA">Ye'kuana</option>
+                                        <option value="OUTRA">Outra</option>
+                                    </select>
+                                )}
+                                {formData.raca === 'OUTROS' && (
+                                    <input type="text" id="outraRaca" value={formData.outraRaca} onChange={handleChange} placeholder="Qual?" className="w-full p-2.5 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-medium uppercase text-sm" />
+                                )}
+                            </div>
+
+                            {/* Nacionalidade */}
+                            <div>
+                                <label className="block text-brand-dark dark:text-white font-semibold text-sm mb-1">Nacionalidade</label>
+                                <select id="nacionalidade" value={formData.nacionalidade} onChange={handleChange} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-medium">
+                                    <option value="BRASILEIRO">Brasileiro</option>
+                                    <option value="VENEZUELANO">Venezuelano</option>
+                                    <option value="GUIANENSE">Guianense</option>
+                                    <option value="HAITIANO">Haitiano</option>
+                                    <option value="OUTROS">Outros</option>
+                                </select>
+                                {formData.nacionalidade === 'OUTROS' && (
+                                    <input type="text" id="outraNacionalidade" value={formData.outraNacionalidade} onChange={handleChange} placeholder="Qual país?" className="w-full p-2.5 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-medium uppercase text-sm" />
+                                )}
+                            </div>
                         </div>
 
                         {/* Endereço Row */}

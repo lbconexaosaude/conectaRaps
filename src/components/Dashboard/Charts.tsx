@@ -191,3 +191,49 @@ export const DiagnoseChart: React.FC<{ data: { name: string, value: number }[] }
     </ResponsiveContainer>
   );
 };
+
+// Race/Ethnicity Chart
+export const RaceChart: React.FC<{ data: { name: string, value: number }[] }> = ({ data }) => {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+          outerRadius={80}
+          fill="#8884d8"
+          dataKey="value"
+        >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend verticalAlign="bottom" height={36} />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+};
+
+// Nationality Chart
+export const NationalityChart: React.FC<{ data: { name: string, value: number }[] }> = ({ data }) => {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        layout="vertical"
+        data={data}
+        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+        <XAxis type="number" fontSize={12} />
+        <YAxis type="category" dataKey="name" fontSize={10} width={100} />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="value" fill="#82ca9d" radius={[0, 4, 4, 0]} name="Pacientes" />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};

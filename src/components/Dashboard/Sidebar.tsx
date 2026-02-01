@@ -69,7 +69,7 @@ const Sidebar: React.FC = () => {
           </div>
           {!isCollapsed && (
             <div className="flex flex-col whitespace-nowrap animate-in fade-in duration-500">
-              <h1 className="text-white text-lg font-bold leading-none tracking-wide">CONECTA RAPS</h1>
+              <h1 className="text-white text-lg font-bold leading-none tracking-wide">CONEXÃO RAPS</h1>
               <span className="text-white/60 text-[10px] mt-1 font-medium">Painel de Gestão</span>
             </div>
           )}

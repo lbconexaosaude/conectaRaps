@@ -84,18 +84,61 @@ const MapComponent: React.FC<MapProps> = ({ data }) => {
         return null;
     };
 
+    // Icons URLs
+    const icons = {
+        samu: "http://maps.google.com/mapfiles/kml/shapes/ambulance.png",
+        ubs: "http://maps.google.com/mapfiles/kml/shapes/hospitals.png",
+        caps: "http://maps.google.com/mapfiles/kml/shapes/plus.png",
+        patient: {
+            red: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            yellow: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+            green: "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+        }
+    };
+
     const markers = useMemo(() => {
+        // 1. Calculate Frequency map for "Reincidente Logic"
+        const freqMap: Record<string, number> = {};
+        if (data) {
+            data.forEach(r => {
+                const nome = r[1];
+                if (nome) freqMap[nome] = (freqMap[nome] || 0) + 1;
+            });
+        }
+
+        if (!data) return [];
+
         return data
             .map((r, i) => {
                 const loc = r[9];
                 const coords = extractCoords(loc);
                 if (!coords) return null;
 
+                // --- LOGIC: SELECT COLOR ---
+                const nome = r[1];
+                const isReincidente = r[12] === 'Sim' || (freqMap[nome] || 0) > 3;
+
+                const med = r[13]; // Medicação (Sim/Não)
+                const fam = r[15]; // Apoio Familiar (Sim/Não)
+                const raps = r[17]; // Apoio RAPS (Sim/Não)
+
+                let markerIcon = icons.patient.green; // Default: Stable
+
+                if (isReincidente && raps === 'Não') {
+                    // CADEIA 1: Cenário Crítico (VERMELHO) - Porta Giratória
+                    markerIcon = icons.patient.red;
+                } else if (!isReincidente && (med === 'Não' || fam === 'Não')) {
+                    // CADEIA 2: Cenário Intermediário (AMARELO) - Risco Assistencial
+                    markerIcon = icons.patient.yellow;
+                }
+                // Else Green
+
                 return {
                     id: `pac-${i}`,
                     lat: coords.lat,
                     lng: coords.lng,
                     title: r[0], // Column 0 is usually ID in new structure
+                    iconUrl: markerIcon,
                     fullData: {
                         id: r[0],
                         nome: r[1],
@@ -107,11 +150,13 @@ const MapComponent: React.FC<MapProps> = ({ data }) => {
                         zona: r[8],
                         diag: r[11],
                         reinc: r[12],
-                        raps: r[17]
+                        raps: r[17],
+                        med: r[13],
+                        fam: r[15]
                     }
                 };
             })
-            .filter((m): m is { id: string, lat: number, lng: number, title: string, fullData: any } => m !== null);
+            .filter((m): m is { id: string, lat: number, lng: number, title: string, iconUrl: string, fullData: any } => m !== null);
     }, [data]);
 
     const heatmapData = useMemo(() => {
@@ -133,14 +178,6 @@ const MapComponent: React.FC<MapProps> = ({ data }) => {
 
     if (loadError) return <div className="p-4 text-red-500">Erro ao carregar o mapa.</div>;
     if (!isLoaded) return <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-500">Carregando Mapa...</div>;
-
-    // Icons URLs (using Google standard icons for now, can be replaced with custom SVGs)
-    const icons = {
-        samu: "http://maps.google.com/mapfiles/kml/shapes/ambulance.png",
-        ubs: "http://maps.google.com/mapfiles/kml/shapes/hospitals.png",
-        caps: "http://maps.google.com/mapfiles/kml/shapes/plus.png",
-        patient: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-    };
 
     return (
         <div className="relative w-full h-full">
@@ -168,7 +205,7 @@ const MapComponent: React.FC<MapProps> = ({ data }) => {
                                 key={marker.id}
                                 position={{ lat: marker.lat, lng: marker.lng }}
                                 title={marker.title} // ID on hover
-                                icon={icons.patient}
+                                icon={marker.iconUrl}
                                 onClick={() => setSelectedMarker(marker)}
                             />
                         ))}
@@ -201,40 +238,36 @@ const MapComponent: React.FC<MapProps> = ({ data }) => {
 
                         {/* Info Window for Selected Patient */}
                         {selectedMarker && isLoaded && (
-                            // Note: InfoWindowF is the functional component wrapper for InfoWindow
-                            <React.Fragment>
-                                {/* We use a custom overlay or just the InfoWindow provided by @react-google-maps/api */}
-                                {/* Since InfoWindowF was deprecated/removed in some versions, ensure correct import. 
-                                    If InfoWindowF is not exported, use InfoWindow. Checking imports... 
-                                    Let's add InfoWindow to imports at top of file first. */}
-                            </React.Fragment>
+                            <React.Fragment></React.Fragment>
                         )}
                     </>
                 )}
             </GoogleMap>
 
             {/* Custom InfoWindow Implementation using logic is safer than relying on InfoWindow component if likely to break types */}
-            {selectedMarker && (
-                <div className="absolute bottom-4 left-4 z-20 bg-white p-4 rounded-xl shadow-card border-l-4 border-brand-medium w-80 animate-fade-in-up">
-                    <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-lg text-brand-dark">{selectedMarker.fullData.id}</h3>
-                        <button onClick={() => setSelectedMarker(null)} className="text-gray-400 hover:text-gray-600">
-                            <span className="material-symbols-outlined text-sm">close</span>
-                        </button>
+            {
+                selectedMarker && (
+                    <div className="absolute bottom-4 left-4 z-20 bg-white p-4 rounded-xl shadow-card border-l-4 border-brand-medium w-80 animate-fade-in-up">
+                        <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-bold text-lg text-brand-dark">{selectedMarker.fullData.id}</h3>
+                            <button onClick={() => setSelectedMarker(null)} className="text-gray-400 hover:text-gray-600">
+                                <span className="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
+                        <div className="space-y-1 text-sm text-gray-600">
+                            <p><span className="font-semibold text-gray-800">Nome:</span> {selectedMarker.fullData.nome}</p>
+                            <p><span className="font-semibold text-gray-800">Idade:</span> {selectedMarker.fullData.idade} anos ({selectedMarker.fullData.sexo})</p>
+                            <p><span className="font-semibold text-gray-800">Bairro:</span> {selectedMarker.fullData.bairro}</p>
+                            <p><span className="font-semibold text-gray-800">Diagnóstico:</span> {selectedMarker.fullData.diag}</p>
+                            <p><span className="font-semibold text-gray-800">Reincidente:</span> {selectedMarker.fullData.reinc}</p>
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-gray-100 text-xs text-gray-500">
+                            {selectedMarker.lat.toFixed(5)}, {selectedMarker.lng.toFixed(5)}
+                        </div>
                     </div>
-                    <div className="space-y-1 text-sm text-gray-600">
-                        <p><span className="font-semibold text-gray-800">Nome:</span> {selectedMarker.fullData.nome}</p>
-                        <p><span className="font-semibold text-gray-800">Idade:</span> {selectedMarker.fullData.idade} anos ({selectedMarker.fullData.sexo})</p>
-                        <p><span className="font-semibold text-gray-800">Bairro:</span> {selectedMarker.fullData.bairro}</p>
-                        <p><span className="font-semibold text-gray-800">Diagnóstico:</span> {selectedMarker.fullData.diag}</p>
-                        <p><span className="font-semibold text-gray-800">Reincidente:</span> {selectedMarker.fullData.reinc}</p>
-                    </div>
-                    <div className="mt-3 pt-2 border-t border-gray-100 text-xs text-gray-500">
-                        {selectedMarker.lat.toFixed(5)}, {selectedMarker.lng.toFixed(5)}
-                    </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

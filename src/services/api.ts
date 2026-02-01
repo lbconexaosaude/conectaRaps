@@ -95,8 +95,11 @@ export const api = {
             fam: p.fam || p.apoio_familiar || api._getVal(p, 'apoio_familiar'),
             pq_fam: p.pq_fam || p.motivo_nao_fam || api._getVal(p, 'motivo_nao_fam'),
             raps: p.raps || p.apoio_raps || api._getVal(p, 'apoio_raps'),
-            info: p.info || p.observacoes || api._getVal(p, 'observacoes')
-          }
+            info: p.info || p.observacoes || api._getVal(p, 'observacoes'),
+            raca: p.raca || api._getVal(p, 'raca'), // New
+            nacionalidade: p.nacionalidade || api._getVal(p, 'nacionalidade') // New
+          },
+          contagem: data.contagem || 0 // New field passed from GAS
         };
       }
       return { result: 'not_found' };
@@ -129,7 +132,30 @@ export const api = {
       const d = await api._safeFetch(DATA_API_URL, 'carregar_estatisticas');
 
       const dadosBrutos = d.dadosBrutos ? d.dadosBrutos.map((r: any) => [
-        r[0], r[1], r[2], r[3], r[4], '', '', r[7], r[8], r[9], '', r[11], r[12], r[13], r[14], r[15], r[16], r[17], r[18], r[19], 'USUÁRIO'
+        r[0], // 0: ID
+        r[1], // 1: Nome
+        r[2], // 2: Nasc
+        r[3], // 3: Sexo
+        r[4], // 4: Idade
+        '',   // 5: End (Placeholder)
+        '',   // 6: Num (Placeholder)
+        r[7], // 7: Bairro
+        r[8], // 8: Zona
+        r[9], // 9: GPS/Loc
+        '',   // 10: Ref (Placeholder)
+        r[11], // 11: Diag
+        r[12], // 12: Reinc
+        r[13], // 13: Med
+        r[14], // 14: Pq Med
+        r[15], // 15: Fam
+        r[16], // 16: Pq Fam
+        r[17], // 17: RAPS
+        r[18], // 18: Obs
+        r[19], // 19: Entrada (Timestamp formatted)
+        'USUÁRIO', // 20: Responsavel fallback (or r[20])
+        '',    // 21: Vazio
+        r[22], // 22: Raca (NEW)
+        r[23]  // 23: Nacionalidade (NEW)
       ]) : [];
 
       return {
@@ -173,7 +199,11 @@ export const api = {
         apoio_fam: payload.apoio_fam,
         porque_fam: payload.porque_fam,
         apoio_raps: payload.apoio_raps,
-        info_extra: payload.info_extra
+        apoio_raps: payload.apoio_raps,
+        info_extra: payload.info_extra,
+        responsavel: payload.responsavel, // Added (Critical)
+        raca: payload.raca,               // Added (Critical)
+        nacionalidade: payload.nacionalidade // Added (Critical)
       });
       return data.result === 'success' ? { result: 'success', id: data.id } : { result: 'error', message: data.message };
     } catch (e) {

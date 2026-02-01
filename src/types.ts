@@ -23,6 +23,9 @@ export interface PatientRecord {
   apoio_raps: string;
   observacoes: string;
   entrada: string;
+  raca?: string;
+  nacionalidade?: string;
+  contagem?: number;
 }
 
 export interface DashboardData {

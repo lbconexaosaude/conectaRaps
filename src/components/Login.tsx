@@ -125,7 +125,7 @@ const Login: React.FC = () => {
                 health_metrics
               </span>
             </div>
-            <h1 className="text-brand-dark dark:text-white text-2xl font-black tracking-tight mb-1">CONECTA RAPS</h1>
+            <h1 className="text-brand-dark dark:text-white text-2xl font-black tracking-tight mb-1">CONEXÃO RAPS</h1>
             <p className="text-xs text-text-muted-light dark:text-text-muted-dark font-semibold uppercase tracking-widest opacity-80">Saúde & Tecnologia</p>
           </div>
 
